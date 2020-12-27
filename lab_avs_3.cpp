@@ -57,7 +57,7 @@ void second(int n, int* res, int* v, int** matrix)
 
 int main()
 {
-	int n = 20000;
+	int n = 5000;
 	int** matrix = new int* [n];
 	int* v = new int[n];
 	int* res = new int[n];
