@@ -7,18 +7,18 @@
 
 using namespace std;
 
-static const int taskNum = 4 * 1024 * 1024;
-static const int producerNum = 1; 
-static const int consumerNum = 1; 
-static const int queueSize = 4;
+const int taskNum = 4 * 1024 * 1024;
+const int producerNum = 1; 
+const int consumerNum = 2; 
+const int queueSize = 1;
 atomic<int> sum(0);
 atomic<int> counter(0);
 atomic<int> sum2(0);
 atomic<int> counter2(0);
-vector<thread> prods;
-vector<thread> consus;
-vector<thread> prods2;
-vector<thread> consus2;
+vector<thread> prods_t;
+vector<thread> cons_t;
+vector<thread> prods_t2;
+vector<thread> cons_t2;
 uint8_t val;
 uint8_t val2;
 
@@ -64,22 +64,23 @@ private:
     mutex m2;
     condition_variable var_push;
     condition_variable var_pop;
-    bool full() {
-        if (q2.size() >= queueSize)
-            return true;
-        else
-            return false;
-    }
-
+    bool full();
 public:
     void push(uint8_t val);
     bool pop(uint8_t& val);
 } q2;
 
+bool SecondQueue::full() {
+    if (q2.size() >= queueSize)
+        return true;
+    else
+        return false;
+}
+
 void SecondQueue::push(uint8_t val) {
     unique_lock<mutex> lk(m2);
 
-    var_push.wait(lk, [this] {return !full(); });
+    var_push.wait(lk, [&] {return !full(); });
     q2.push(val);
 
     var_pop.notify_all();
@@ -116,25 +117,6 @@ void cons() {
     sum.fetch_add(s);
 }
 
-void prod() {
-    for (int i = 0; i < taskNum; i++) {
-        q.push(1);
-    }
-}
-
-void prod2() {
-    for (int i = 0; i < taskNum; i++) {
-        q2.push(1);
-    }
-}
-
-void show()
-{
-    cout << "sum1: " << sum << endl;
-    cout << "sum2: " << sum2 << endl;
-    cout << endl;
-}
-
 void cons2() {
     int s = 0;
     val2 = 0;
@@ -152,36 +134,70 @@ void cons2() {
     sum2.fetch_add(s);
 }
 
+
+void prod() {
+    for (int i = 0; i < taskNum; i++) {
+        q.push(1);
+    }
+}
+
+void prod2() {
+    for (int i = 0; i < taskNum; i++) {
+        q2.push(1);
+    }
+}
+
+void show()
+{
+    cout << "sum1: " << sum << "\n";
+    cout << "sum2: " << sum2 << "\n";
+    cout << "\n";
+}
+
 void first_queue()
 {
     for (int i = 0; i < producerNum; i++) {
-        prods.push_back(thread(prod));
-        prods[i].join();
+        prods_t.push_back(thread(prod));
+        prods_t[i].join();
     }
 
     for (int i = 0; i < consumerNum; i++) {
-        consus.push_back(thread(cons));
-        consus[i].join();
+        cons_t.push_back(thread(cons));
+        cons_t[i].join();
     }
 }
 
 int main() {
+    chrono::high_resolution_clock::time_point start1;
+    chrono::high_resolution_clock::time_point end1;
+    chrono::high_resolution_clock::time_point start2;
+    chrono::high_resolution_clock::time_point end2;
+    chrono::duration<float, milli> t1;
+    chrono::duration<float, milli> t2;
+    start1 = chrono::high_resolution_clock::now();
     first_queue();
+    end1 = chrono::high_resolution_clock::now();
+    t1 = end1 - start1;
+    start2 = chrono::high_resolution_clock::now();
     for (int i = 0; i < producerNum; i++) {
-        prods2.push_back(thread(prod2));
+        prods_t2.push_back(thread(prod2));
     }
 
     for (int i = 0; i < consumerNum; i++) {
-        consus2.push_back(thread(cons2));
+        cons_t2.push_back(thread(cons2));
     }
 
     for (int i = 0; i < producerNum; i++) {
-        prods2[i].join();
+        prods_t2[i].join();
     }
 
     for (int i = 0; i < consumerNum; i++) {
-        consus2[i].join();
+        cons_t2[i].join();
     }
+    end2 = chrono::high_resolution_clock::now();
+    t2 = end2 - start2;
     show();
+    cout << "time1: " << t1.count() << " ms" << "\n";
+    cout << "time2: " << t2.count() << " ms" << "\n";
     return 0;
 }
