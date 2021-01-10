@@ -71,10 +71,8 @@ public:
 } q2;
 
 bool SecondQueue::full() {
-    if (q2.size() >= queueSize)
-        return true;
-    else
-        return false;
+
+    return q2.size() >= queueSize;
 }
 
 void SecondQueue::push(uint8_t val) {
@@ -109,11 +107,10 @@ void cons() {
         s += val;
         counter++;
 
-        if (c >= taskNum * producerNum) {
+        if (c >= taskNum * producerNum)
             break;
-        }
+        
     }
-
     sum.fetch_add(s);
 }
 
@@ -154,19 +151,6 @@ void show()
     cout << "\n";
 }
 
-void first_queue()
-{
-    for (int i = 0; i < producerNum; i++) {
-        prods_t.push_back(thread(prod));
-        prods_t[i].join();
-    }
-
-    for (int i = 0; i < consumerNum; i++) {
-        cons_t.push_back(thread(cons));
-        cons_t[i].join();
-    }
-}
-
 int main() {
     chrono::high_resolution_clock::time_point start1;
     chrono::high_resolution_clock::time_point end1;
@@ -175,7 +159,21 @@ int main() {
     chrono::duration<float, milli> t1;
     chrono::duration<float, milli> t2;
     start1 = chrono::high_resolution_clock::now();
-    first_queue();
+    for (int i = 0; i < producerNum; i++) {
+        prods_t.push_back(thread(prod));
+    }
+
+    for (int i = 0; i < consumerNum; i++) {
+        cons_t.push_back(thread(cons));
+    }
+
+    for (int i = 0; i < producerNum; i++) {
+        prods_t[i].join();
+    }
+
+    for (int i = 0; i < consumerNum; i++) {
+        cons_t[i].join();
+    }
     end1 = chrono::high_resolution_clock::now();
     t1 = end1 - start1;
     start2 = chrono::high_resolution_clock::now();

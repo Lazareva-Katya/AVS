@@ -10,15 +10,18 @@ int counter1 = 0;
 atomic <unsigned int> counter2 = 0;
 mutex m;
 
-void mutex_func(int8_t* arr)
+void mutex_func(int8_t* arr) 
 {
 	int counter = 0;
 	while (counter < NumTasks)
 	{
 		m.lock();
 		counter = counter1++;
-		arr[counter]++;
 		m.unlock();
+		if (counter < NumTasks)
+			arr[counter]++;
+		else
+			break;
 	}
 }
 
@@ -28,7 +31,10 @@ void atomic_func(int8_t* arr)
 	while (counter < NumTasks)
 	{
 		counter = counter2++;
-		arr[counter]++;
+		if (counter < NumTasks) 
+			arr[counter]++;
+		else
+			break;
 	}
 }
 
@@ -39,9 +45,14 @@ void mutex_sleep(int8_t* arr)
 	{
 		m.lock();
 		counter = counter1++;
-		arr[counter]++;
-		this_thread::sleep_for(chrono::nanoseconds(10));
 		m.unlock();
+		if (counter < NumTasks)
+		{
+			arr[counter]++;
+			this_thread::sleep_for(chrono::nanoseconds(10));
+		}
+		else
+			break;
 	}
 }
 
@@ -51,14 +62,19 @@ void atomic_sleep(int8_t* arr)
 	while (counter < NumTasks)
 	{
 		counter = counter2++;
-		arr[counter]++;
-		this_thread::sleep_for(chrono::nanoseconds(10));
+		if (counter < NumTasks)
+		{
+			arr[counter]++;
+			this_thread::sleep_for(chrono::nanoseconds(10));
+		}
+		else
+			break;
 	}
 }
 
 void show(int NumThreads, float duration)
 {
-	cout << "streams: " << NumThreads << " time: " << duration << "\n\n";
+	cout << "threads: " << NumThreads << " time: " << duration << "\n\n";
 }
 
 void action(thread* arr_t, int8_t* arr, unsigned int NumThreads, bool flag, bool sleep)
