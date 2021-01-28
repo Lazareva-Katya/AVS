@@ -10,35 +10,7 @@ int counter1 = 0;
 atomic <unsigned int> counter2 = 0;
 mutex m;
 
-void mutex_func(int8_t* arr) 
-{
-	int counter = 0;
-	while (counter < NumTasks)
-	{
-		m.lock();
-		counter = counter1++;
-		m.unlock();
-		if (counter < NumTasks)
-			arr[counter]++;
-		else
-			break;
-	}
-}
-
-void atomic_func(int8_t* arr)
-{
-	int counter = 0;
-	while (counter < NumTasks)
-	{
-		counter = counter2++;
-		if (counter < NumTasks) 
-			arr[counter]++;
-		else
-			break;
-	}
-}
-
-void mutex_sleep(int8_t* arr)
+void mutex_func(int8_t* arr, bool flag) 
 {
 	int counter = 0;
 	while (counter < NumTasks)
@@ -49,14 +21,15 @@ void mutex_sleep(int8_t* arr)
 		if (counter < NumTasks)
 		{
 			arr[counter]++;
-			this_thread::sleep_for(chrono::nanoseconds(10));
+			if (flag == true)
+				this_thread::sleep_for(chrono::nanoseconds(10));
 		}
 		else
 			break;
 	}
 }
 
-void atomic_sleep(int8_t* arr)
+void atomic_func(int8_t* arr, bool flag)
 {
 	int counter = 0;
 	while (counter < NumTasks)
@@ -65,7 +38,8 @@ void atomic_sleep(int8_t* arr)
 		if (counter < NumTasks)
 		{
 			arr[counter]++;
-			this_thread::sleep_for(chrono::nanoseconds(10));
+			if (flag == true)
+				this_thread::sleep_for(chrono::nanoseconds(10));
 		}
 		else
 			break;
@@ -98,18 +72,18 @@ void action(thread* arr_t, int8_t* arr, unsigned int NumThreads, bool flag, bool
 	{
 		if (flag == true && sleep == false)
 		{
-			arr_t[i] = thread(mutex_func, arr);
+			arr_t[i] = thread(mutex_func, arr, false);
 		}
 		else if (flag == false && sleep == false)
 		{
-			arr_t[i] = thread(atomic_func, arr);
+			arr_t[i] = thread(atomic_func, arr, false);
 		}
 		else if (flag == true && sleep == true)
 		{
-			arr_t[i] = thread(mutex_sleep, arr);
+			arr_t[i] = thread(mutex_func, arr, true);
 		}
 		else
-			arr_t[i] = thread(atomic_sleep, arr);
+			arr_t[i] = thread(atomic_func, arr, true);
 		arr_t[i].join();
 	}
 }
@@ -142,10 +116,10 @@ void act(int8_t* arr, thread* arr_t, unsigned int NumThreads, int switcher)
 int8_t activity(int8_t* arr, unsigned int NumThreads)
 {
 	thread* arr_t = new thread[NumThreads];
-	act(arr, arr_t, NumThreads, 0);
-	act(arr, arr_t, NumThreads, 1);
-	act(arr, arr_t, NumThreads, 2);
-	act(arr, arr_t, NumThreads, 3);
+	for (int i = 0; i < 4; i++)
+	{
+		act(arr, arr_t, NumThreads, i);
+	}
 	return *arr;
 }
 
@@ -156,4 +130,6 @@ int main()
 
 	for (int i = 0; i < 4; i++)
 		activity(arr, NumTreads[i]);
+
+	return 0;
 }
