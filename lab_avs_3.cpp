@@ -7,6 +7,7 @@ using namespace std;
 int** fill_matrix(int n, int** matrix)
 {
 	for (int i = 0; i < n; i++) {
+		matrix[i] = new int[n];
 		for (int j = 0; j < n; j++) {
 			matrix[i][j] = rand() % 35;
 		}
@@ -14,11 +15,10 @@ int** fill_matrix(int n, int** matrix)
 	return matrix;
 }
 
-int* fill_v(int n, int* v, int** matrix)
+int* fill_v(int n, int* v)
 {
 	for (int i = 0; i < n; i++) {
 		v[i] = rand() % 35;
-		matrix[i] = new int[n];
 	}
 	return v;
 }
@@ -60,7 +60,7 @@ int main()
 	int n = 20000;
 	int** matrix = new int* [n];
 	int* v = new int[n];
-	v = fill_v(n, v, matrix);
+	v = fill_v(n, v);
 	matrix = fill_matrix(n, matrix);
 	first(n, v, matrix);
 	second(n, v, matrix);
